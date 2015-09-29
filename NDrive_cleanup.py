@@ -4,18 +4,18 @@ import datetime
 import time
 import csv
 import argparse
+import stat
 
-deletedays = 30 #delete files on dest older than this many days
+deletedays = 32 #delete files on dest older than this many days
 now = time.time();
-deletesecs = 1200#deletedays*24*60*60;
-EXCEPTIONS = ['daniel','isma','dmitry']
+deletesecs = deletedays*24*60*60;
+EXCEPTIONS = ['Dan','Isma','JH (Do Not Delete)']
 
-def write_log(fpath,dirs):
-	unique_dirs = set(dirs)
+def write_log(fpath,dirs,dates,folder_dates):
 	with open(fpath, 'wb') as myfile:
 		wr = csv.writer(myfile, quoting=csv.QUOTE_ALL)
-		for row in unique_dirs:
-			wr.writerow([row,])
+		for row in zip(dirs,dates,folder_dates):
+			wr.writerow(row)
 
 def modification_date(filename):
     t = os.path.getmtime(filename)
@@ -29,32 +29,34 @@ def main(walk_dir,verbose,log):
 
 	to_delete = []
 	last_mod = []
+	last_mod_root = []
 	to_delete_root = []
 	size = 0
 	for root, subdirs, files in os.walk(walk_dir):
-		print root
 		for f in files:
 			fpath = os.path.join(root,f)
+			rt,rmtime = modification_date(root)
 			t, mtime = modification_date(fpath)
-			if ((now - t) > deletesecs) and (root not in EXCEPTIONS):
+			if ((now - rt) > deletesecs) and ('Dan' not in root):
 				size += os.path.getsize(fpath)
 				#print 'delete ', fpath, 'last mod on: ',mtime
 				to_delete.append(fpath)
 				last_mod.append(mtime)
+				last_mod_root.append(rmtime)
 				to_delete_root.append(root)
 			else:
 				pass
 				#print 'keep', fpath, 'last mod on: ',mtime
 
 	if verbose:
-		for tod in to_delete:
-			print 'Delete: ', tod, ' last mod on: ',mtime
+		for tod,tod_mtime in zip(to_delete,last_mod):
+			print 'Delete: ', tod, ' last mod on: ',tod_mtime
 
 	print 'There are ',len(to_delete),' items to be deleted.'
 	print 'this will free up ', float(size)/1e9,' Gb'
 	
 	if log:
-		write_log(log,to_delete_root)
+		write_log(log,to_delete,last_mod,last_mod_root)
 
 	decision = raw_input('Continue with deletion? (Y/n)  ')
 
@@ -63,8 +65,8 @@ def main(walk_dir,verbose,log):
 			try:
 				os.remove(fp)
 			except:
-				os.chmod(filepath, stat.S_IWRITE)
-				os.remove(filepath)
+				os.chmod(fp, stat.S_IWRITE)
+				os.remove(fp)
 		for folder in to_delete_root:
 			try:
 				os.rmdir(folder) #os.rmdir won't delete non-empty dirs
@@ -83,7 +85,7 @@ if __name__=='__main__':
 		print 'drive to scan', args.drive
 		walk_dir = args.drive
 	else:
-		walk_dir = '/media/NDrive' 
+		walk_dir = '/media/nicshare' 
 		print 'reverting to default'
 	log = None	
 	if args.writefile:
