@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 import os
 import sys
 import datetime
@@ -21,7 +23,7 @@ def modification_date(filename):
     t = os.path.getmtime(filename)
     return t,datetime.datetime.fromtimestamp(t)
 
-def main(walk_dir,verbose,log):
+def main(walk_dir,verbose,log,force):
 	global EXCEPTIONS
 
 	EXCEPTIONS = [os.path.join(walk_dir,ex) for ex in EXCEPTIONS]
@@ -58,7 +60,10 @@ def main(walk_dir,verbose,log):
 	if log:
 		write_log(log,to_delete,last_mod,last_mod_root)
 
-	decision = raw_input('Continue with deletion? (Y/n)  ')
+	if force:
+		decision = 'Y'
+	else:
+		decision = raw_input('Continue with deletion? (Y/n)  ')
 
 	if decision == 'Y':
 		for fp in to_delete:
@@ -78,8 +83,9 @@ def main(walk_dir,verbose,log):
 if __name__=='__main__':
 	parser = argparse.ArgumentParser()
 	parser.add_argument("-d", "--drive", type=str, help="enter the path to the network drive")
-	parser.add_argument("-v", "--verbose", action='store_true',help="list everything that will be deleted")
-	parser.add_argument("-w", "--writefile", type=str, help="write root dirs to csv file")
+	parser.add_argument("-f", "--force", action='store_true', help="deletes without warning")
+	parser.add_argument("-v", "--verbose", action='store_true', help="list everything that will be deleted")
+
 	args = parser.parse_args()
 	if args.drive:
 		print 'drive to scan', args.drive
@@ -87,9 +93,16 @@ if __name__=='__main__':
 	else:
 		walk_dir = '/media/nicshare' 
 		print 'reverting to default'
-	log = None	
-	if args.writefile:
-		log = args.writefile
-		print 'writing root dirs to: ', log  
-	main(walk_dir,args.verbose,log)
+
+	force = None
+	if args.force:
+		force = True
+
+	date = str(datetime.date.today())
+	folder = walk_dir[7:]
+	if '/' in folder:
+		folder = folder[:-1]
+	log =  folder + '-deleted-' + date + '.csv'
+	print 'writing root dirs to: ', log  
+	main(walk_dir,args.verbose,log,force)
 
