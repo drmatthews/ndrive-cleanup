@@ -7,6 +7,7 @@ import time
 import csv
 import argparse
 import stat
+from scandir import walk
 
 deletedays = 32 #delete files on dest older than this many days
 now = time.time();
@@ -34,7 +35,8 @@ def main(walk_dir,verbose,log,force):
 	last_mod_root = []
 	to_delete_root = []
 	size = 0
-	for root, subdirs, files in os.walk(walk_dir):
+	s = time.time()
+	for root, subdirs, files in walk(walk_dir):
 		for f in files:
 			fpath = os.path.join(root,f)
 			rt,rmtime = modification_date(root)
@@ -42,13 +44,14 @@ def main(walk_dir,verbose,log,force):
 			if ((now - rt) > deletesecs) and ('Dan' not in root):
 				size += os.path.getsize(fpath)
 				#print 'delete ', fpath, 'last mod on: ',mtime
-				to_delete.append(fpath)
+				to_delete.append(fpath.encode('ascii','ignore'))
 				last_mod.append(mtime)
 				last_mod_root.append(rmtime)
 				to_delete_root.append(root)
 			else:
 				pass
 				#print 'keep', fpath, 'last mod on: ',mtime
+	print "traversing dirs took", time.time() - s, " seconds"
 
 	if verbose:
 		for tod,tod_mtime in zip(to_delete,last_mod):
@@ -56,9 +59,6 @@ def main(walk_dir,verbose,log,force):
 
 	print 'There are ',len(to_delete),' items to be deleted.'
 	print 'this will free up ', float(size)/1e9,' Gb'
-	
-	if log:
-		write_log(log,to_delete,last_mod,last_mod_root)
 
 	if force:
 		decision = 'Y'
@@ -66,6 +66,8 @@ def main(walk_dir,verbose,log,force):
 		decision = raw_input('Continue with deletion? (Y/n)  ')
 
 	if decision == 'Y':
+		if log:
+			write_log(log,to_delete,last_mod,last_mod_root)		
 		for fp in to_delete:
 			try:
 				os.remove(fp)
