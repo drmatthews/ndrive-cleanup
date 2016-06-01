@@ -92,19 +92,20 @@ if __name__=='__main__':
 	if args.drive:
 		print 'drive to scan', args.drive
 		walk_dir = args.drive
-	else:
-		walk_dir = '/media/nicshare' 
-		print 'reverting to default'
+		force = None
+		if args.force:
+			force = True
 
-	force = None
-	if args.force:
-		force = True
+		date = str(datetime.date.today())
+		folder = walk_dir[7:]
+		if '/' in folder:
+			folder = folder[:-1]
+		log =  folder + '-deleted-' + date + '.csv'
+		print 'writing root dirs to: ', log  
+		main(walk_dir,args.verbose,log,force)		
+	elif args.drive is None:
+		print 'You need to provide at least the folder to clear. Pass -h to see options.'
 
-	date = str(datetime.date.today())
-	folder = walk_dir[7:]
-	if '/' in folder:
-		folder = folder[:-1]
-	log =  folder + '-deleted-' + date + '.csv'
-	print 'writing root dirs to: ', log  
-	main(walk_dir,args.verbose,log,force)
+
+		
 
