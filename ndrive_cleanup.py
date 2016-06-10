@@ -12,7 +12,7 @@ from scandir import walk
 deletedays = 32 #delete files on dest older than this many days
 now = time.time();
 deletesecs = deletedays*24*60*60;
-EXCEPTIONS = ['Dan','Isma','JH (Do Not Delete)']
+EXCEPTIONS = ['Dan','Isma']
 
 def write_log(fpath,dirs,dates,folder_dates):
 	with open(fpath, 'wb') as myfile:
