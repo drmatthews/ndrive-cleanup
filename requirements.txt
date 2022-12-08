@@ -1,4 +1,4 @@
-certifi==2018.8.24
+certifi==2022.12.7
 msgpack==0.5.6
 scandir==1.9.0
 wincertstore==0.2
